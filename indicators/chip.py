@@ -25,7 +25,8 @@ def aggregate_chip(df: pd.DataFrame, days: int = 10) -> pd.DataFrame:
 
     df = df.sort_values("date")
     rows = []
-    for date in df["date"].unique()[-days:]:
+    recent_dates = sorted(df["date"].unique())[-days:]
+    for date in recent_dates:
         day = df[df["date"] == date]
         agg = {"日期": str(date)[:10], "外資": 0, "投信": 0, "自營": 0}
         for _, r in day.iterrows():
@@ -52,11 +53,11 @@ def main_force_signal(chip_df: pd.DataFrame, df_price: pd.DataFrame) -> dict:
     Returns:
         含 'label'（信號名稱）、'color'（視覺顏色碼）、'desc'（說明文字）的字典
     """
-    if chip_df.empty:
+    if chip_df.empty or df_price.empty:
         return {"label": "觀望", "color": "#95a5a6", "desc": "資料不足"}
 
     recent5 = chip_df.tail(5)["合計"].sum()
-    cum10   = chip_df["合計"].sum()
+    cum10   = chip_df["10日累計"].iloc[-1]
     close   = df_price["close"].iloc[-1]
     high60  = df_price["close"].tail(60).max()
     vol_ratio = df_price["volume"].iloc[-1] / (df_price["volume"].tail(20).mean() + 1e-9)
