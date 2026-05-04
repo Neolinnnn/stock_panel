@@ -9,22 +9,18 @@ load_dotenv()
 
 from data.cache import get as _cget, set as _cset, is_after_hours
 
-_CHIP_MAP = {
-    "Foreign_Investor":    "外資",
-    "Foreign_Dealer_Self": "外資",
-    "Investment_Trust":    "投信",
-    "Dealer_self":         "自營",
-    "Dealer_Hedging":      "自營",
-}
+_loader = None
 
 
 def _dl():
-    from FinMind.data import DataLoader
-    dl = DataLoader()
-    token = os.environ.get("FINMIND_TOKEN", "")
-    if token:
-        dl.login_by_token(api_token=token)
-    return dl
+    global _loader
+    if _loader is None:
+        from FinMind.data import DataLoader
+        _loader = DataLoader()
+        token = os.environ.get("FINMIND_TOKEN", "")
+        if token:
+            _loader.login_by_token(api_token=token)
+    return _loader
 
 
 def _ttl() -> int:
@@ -79,6 +75,7 @@ def institutional_investors(stock_id: str, days: int = 30) -> pd.DataFrame:
     start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
     df = _dl().taiwan_stock_institutional_investors(stock_id=stock_id, start_date=start, end_date=end)
     if not df.empty:
+        df = df.tail(days).reset_index(drop=True)
         _cset(key, df)
     return df
 
@@ -93,6 +90,7 @@ def margin_purchase(stock_id: str, days: int = 30) -> pd.DataFrame:
     start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
     df = _dl().taiwan_stock_margin_purchase_short_sale(stock_id=stock_id, start_date=start, end_date=end)
     if not df.empty:
+        df = df.tail(days).reset_index(drop=True)
         _cset(key, df)
     return df
 
