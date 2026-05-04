@@ -133,8 +133,8 @@ def update_panel(stock_id: str, _intervals: int):
             ], style={"display": "flex", "gap": "12px", "alignItems": "flex-start"}),
 
             html.Div([
-                html.Div([build_key_levels(levels)],                 style={"flex": "1"}),
                 html.Div([build_pattern_analysis(patterns)],         style={"flex": "1"}),
+                html.Div([build_key_levels(levels)],                 style={"flex": "1"}),
                 html.Div([build_operation_suggestion(summary, levels)], style={"flex": "1"}),
                 html.Div([build_prediction_panel(pred)],             style={"flex": "1"}),
             ], style={"display": "flex", "gap": "10px", "marginTop": "12px"}),

@@ -13,8 +13,8 @@ def build_header(stock_id: str, info: dict, quote: dict, df) -> html.Div:
     prev  = float(df["close"].iloc[-2]) if len(df) >= 2 else close
     date  = str(df["date"].iloc[-1])[:10] if not df.empty else "—"
 
-    change     = round(close - prev, 2)         if (close and prev) else None
-    change_pct = round(change / prev * 100, 2)  if (change and prev) else None
+    change     = round(close - prev, 2)         if (close is not None and prev is not None) else None
+    change_pct = round(change / prev * 100, 2)  if (change is not None and prev) else None
     color      = "#e74c3c" if (change or 0) > 0 else "#27ae60" if (change or 0) < 0 else "#fafafa"
 
     arrow  = "▲" if (change or 0) > 0 else "▼"
