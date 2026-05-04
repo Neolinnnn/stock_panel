@@ -37,7 +37,7 @@ def aggregate_chip(df: pd.DataFrame, days: int = 10) -> pd.DataFrame:
         rows.append(agg)
 
     result = pd.DataFrame(rows)
-    result["10日累計"] = result["合計"].cumsum()
+    result["10日累計"] = result["合計"].rolling(window=10, min_periods=1).sum()
     return result
 
 
