@@ -1,0 +1,5 @@
+.cache/
+model/rf_model.pkl
+*.pyc
+__pycache__/
+.env
