@@ -3,7 +3,6 @@ dash-bootstrap-components>=1.6.0
 plotly>=5.20.0
 pandas>=2.0.0
 numpy>=1.26.0
-pandas-ta>=0.3.14b0
 scipy>=1.12.0
 scikit-learn>=1.4.0
 FinMind>=1.7.0
