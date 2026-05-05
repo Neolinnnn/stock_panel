@@ -36,7 +36,9 @@ def predict(df: pd.DataFrame, chip_raw: pd.DataFrame,
             margin_raw: pd.DataFrame | None = None) -> dict:
     try:
         from model.train import build_features, FEATURES
-        built = build_features(df, chip_raw, margin_raw).dropna()
+        import numpy as np
+        built = build_features(df, chip_raw, margin_raw)
+        built = built.replace([np.inf, -np.inf], np.nan).dropna()
         if built.empty:
             raise ValueError("empty after feature building")
         return _predict_from_row(built.tail(1))

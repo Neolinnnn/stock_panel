@@ -89,7 +89,8 @@ def train(stock_ids: list[str] | None = None):
         if df.empty:
             print(f"  {sid}: no data, skipped")
             continue
-        built = build_features(df, chip_raw, margin_raw).dropna()
+        built = build_features(df, chip_raw, margin_raw)
+        built = built.replace([np.inf, -np.inf], np.nan).dropna()
         all_rows.append(built)
 
     if not all_rows:
