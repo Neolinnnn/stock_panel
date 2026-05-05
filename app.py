@@ -143,7 +143,10 @@ def update_panel(stock_id: str, _intervals: int):
         return body, f"已載入 {info.get('name', stock_id)}（{stock_id}）"
 
     except Exception as e:
-        return html.Div(f"⚠ 錯誤：{e}", style={"color": "#e74c3c", "padding": "24px"}), "發生錯誤"
+        msg = str(e)
+        if msg in ("'data'", "data"):
+            msg = "FinMind API 查詢頻率過高，請稍後再試（匿名模式每小時限 10 次）"
+        return html.Div(f"⚠ 錯誤：{msg}", style={"color": "#e74c3c", "padding": "24px"}), "發生錯誤"
 
 
 def _empty_panel() -> html.Div:

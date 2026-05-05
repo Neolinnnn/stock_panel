@@ -33,18 +33,21 @@ def daily_ohlcv(stock_id: str, days: int = 120) -> pd.DataFrame:
     if cached is not None:
         return cached
 
-    end = datetime.now().strftime("%Y-%m-%d")
-    start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
-    df = _dl().taiwan_stock_daily(stock_id=stock_id, start_date=start, end_date=end)
-    if df.empty:
-        return df
+    try:
+        end = datetime.now().strftime("%Y-%m-%d")
+        start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
+        df = _dl().taiwan_stock_daily(stock_id=stock_id, start_date=start, end_date=end)
+        if df.empty:
+            return df
 
-    df = df.sort_values("date").rename(columns={"max": "high", "min": "low", "Trading_Volume": "volume"})
-    for col in ["open", "high", "low", "close", "volume"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.tail(days).reset_index(drop=True)
-    _cset(key, df)
-    return df
+        df = df.sort_values("date").rename(columns={"max": "high", "min": "low", "Trading_Volume": "volume"})
+        for col in ["open", "high", "low", "close", "volume"]:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+        df = df.tail(days).reset_index(drop=True)
+        _cset(key, df)
+        return df
+    except Exception:
+        return pd.DataFrame()
 
 
 def minute_ohlcv(stock_id: str) -> pd.DataFrame:
@@ -71,13 +74,16 @@ def institutional_investors(stock_id: str, days: int = 30) -> pd.DataFrame:
     if cached is not None:
         return cached
 
-    end = datetime.now().strftime("%Y-%m-%d")
-    start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
-    df = _dl().taiwan_stock_institutional_investors(stock_id=stock_id, start_date=start, end_date=end)
-    if not df.empty:
-        df = df.tail(days).reset_index(drop=True)
-        _cset(key, df)
-    return df
+    try:
+        end = datetime.now().strftime("%Y-%m-%d")
+        start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
+        df = _dl().taiwan_stock_institutional_investors(stock_id=stock_id, start_date=start, end_date=end)
+        if not df.empty:
+            df = df.tail(days).reset_index(drop=True)
+            _cset(key, df)
+        return df
+    except Exception:
+        return pd.DataFrame()
 
 
 def margin_purchase(stock_id: str, days: int = 30) -> pd.DataFrame:
@@ -86,13 +92,16 @@ def margin_purchase(stock_id: str, days: int = 30) -> pd.DataFrame:
     if cached is not None:
         return cached
 
-    end = datetime.now().strftime("%Y-%m-%d")
-    start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
-    df = _dl().taiwan_stock_margin_purchase_short_sale(stock_id=stock_id, start_date=start, end_date=end)
-    if not df.empty:
-        df = df.tail(days).reset_index(drop=True)
-        _cset(key, df)
-    return df
+    try:
+        end = datetime.now().strftime("%Y-%m-%d")
+        start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
+        df = _dl().taiwan_stock_margin_purchase_short_sale(stock_id=stock_id, start_date=start, end_date=end)
+        if not df.empty:
+            df = df.tail(days).reset_index(drop=True)
+            _cset(key, df)
+        return df
+    except Exception:
+        return pd.DataFrame()
 
 
 def realtime_quote(stock_id: str) -> dict:
