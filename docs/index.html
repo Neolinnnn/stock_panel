@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>個股深度分析面板</title>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--sub:#8b949e;--up:#26a641;--dn:#f85149;--neu:#58a6ff;--acc:#1f6feb;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh;}
+
+/* ── Top bar ── */
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+#topbar h1{font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;}
+#stock-input{padding:6px 10px;font-size:14px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;width:160px;}
+#analyze-btn{padding:6px 18px;font-size:14px;font-weight:600;background:var(--acc);color:#fff;border:none;border-radius:6px;cursor:pointer;}
+#analyze-btn:hover{background:#388bfd;}
+#status{font-size:12px;color:var(--sub);}
+#watchlist-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;}
+.wl-btn{padding:4px 10px;font-size:12px;background:var(--bg);color:var(--sub);border:1px solid var(--border);border-radius:4px;cursor:pointer;}
+.wl-btn:hover{border-color:var(--acc);color:var(--text);}
+
+/* ── Header strip ── */
+#header{padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--border);display:none;}
+#header .name{font-size:20px;font-weight:700;}
+#header .meta{font-size:12px;color:var(--sub);margin-top:2px;}
+#header .price-row{display:flex;align-items:baseline;gap:12px;margin-top:6px;}
+#header .price{font-size:32px;font-weight:700;}
+#header .chg{font-size:16px;font-weight:600;}
+#header .gen-time{font-size:11px;color:var(--sub);margin-left:auto;align-self:flex-end;}
+.up{color:var(--up);} .dn{color:var(--dn);} .flat{color:var(--sub);}
+
+/* ── Layout ── */
+#main{display:flex;gap:10px;padding:10px 16px;align-items:flex-start;display:none;}
+#left{flex:7;min-width:0;}
+#right{flex:3;min-width:240px;max-width:320px;display:flex;flex-direction:column;gap:8px;}
+
+/* ── Charts ── */
+.chart-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+#mini-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+
+/* ── Cards ── */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 12px;}
+.card h3{font-size:12px;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.row:last-child{border-bottom:none;}
+.row .lbl{color:var(--sub);}
+.row .val{font-weight:600;}
+
+/* ── Signal ── */
+#signal-card{display:flex;align-items:center;gap:10px;}
+#signal-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;}
+#signal-label{font-size:16px;font-weight:700;}
+#signal-desc{font-size:12px;color:var(--sub);margin-top:3px;}
+
+/* ── Prediction ── */
+.prob-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:6px 0;}
+.prob-up{background:var(--up);}
+.prob-neu{background:var(--acc);}
+.prob-dn{background:var(--dn);}
+.prob-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);}
+
+/* ── Bottom panels ── */
+#bottom{display:flex;gap:10px;padding:0 16px 16px;flex-wrap:wrap;display:none;}
+#bottom .card{flex:1;min-width:200px;}
+.pattern-item{padding:4px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.pattern-item:last-child{border-bottom:none;}
+.pattern-item .pt{font-weight:600;}
+.pattern-item .pd{font-size:11px;color:var(--sub);}
+
+/* ── Chip table ── */
+.chip-table{width:100%;border-collapse:collapse;font-size:12px;}
+.chip-table th{color:var(--sub);text-align:right;padding:3px 6px;font-weight:500;}
+.chip-table th:first-child{text-align:left;}
+.chip-table td{text-align:right;padding:3px 6px;}
+.chip-table td:first-child{text-align:left;color:var(--sub);}
+
+/* ── Empty / Loading ── */
+#empty{text-align:center;padding:80px;color:var(--sub);font-size:14px;}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topbar">
+  <h1>📊 個股深度分析</h1>
+  <input id="stock-input" type="text" placeholder="輸入股票代碼" maxlength="6">
+  <button id="analyze-btn">分析</button>
+  <span id="status"></span>
+  <div id="watchlist-wrap"></div>
+</div>
+
+<!-- Header -->
+<div id="header">
+  <div class="name" id="h-name"></div>
+  <div class="meta" id="h-meta"></div>
+  <div class="price-row">
+    <span class="price" id="h-price"></span>
+    <span class="chg" id="h-chg"></span>
+    <span class="gen-time" id="h-time"></span>
+  </div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="left">
+    <div class="chart-box" id="main-chart"></div>
+    <div id="mini-row">
+      <div class="chart-box" id="kd-chart"></div>
+      <div class="chart-box" id="chip-chart"></div>
+    </div>
+  </div>
+  <div id="right">
+    <!-- Signal -->
+    <div class="card">
+      <h3>主力燈號</h3>
+      <div id="signal-card">
+        <div id="signal-dot"></div>
+        <div>
+          <div id="signal-label"></div>
+          <div id="signal-desc"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Technical summary -->
+    <div class="card">
+      <h3>技術面摘要</h3>
+      <div id="summary-rows"></div>
+    </div>
+    <!-- Chip summary -->
+    <div class="card">
+      <h3>近期法人籌碼</h3>
+      <div id="chip-summary"></div>
+    </div>
+    <!-- Prediction -->
+    <div class="card">
+      <h3>AI 勝率預測</h3>
+      <div id="pred-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom -->
+<div id="bottom">
+  <div class="card" id="bottom-patterns">
+    <h3>型態分析</h3>
+    <div id="pattern-list"></div>
+  </div>
+  <div class="card" id="bottom-levels">
+    <h3>關鍵價位</h3>
+    <div id="levels-rows"></div>
+  </div>
+  <div class="card" id="bottom-suggest">
+    <h3>操作建議</h3>
+    <div id="suggest-content" style="font-size:13px;line-height:1.7;color:var(--sub);"></div>
+  </div>
+</div>
+
+<div id="empty">輸入股票代碼後按「分析」開始。</div>
+
+<script>
+const BASE = location.pathname.replace(/\/[^/]*$/, '') + '/stocks';
+
+// ── Load manifest ─────────────────────────────────────────────────────────
+async function loadManifest() {
+  try {
+    const r = await fetch(BASE + '/manifest.json');
+    if (!r.ok) return [];
+    return await r.json();
+  } catch { return []; }
+}
+
+// ── Watchlist buttons ─────────────────────────────────────────────────────
+async function initWatchlist() {
+  const manifest = await loadManifest();
+  const wrap = document.getElementById('watchlist-wrap');
+  manifest.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'wl-btn';
+    const pct = m.change_pct != null ? `${m.change_pct > 0 ? '+' : ''}${m.change_pct.toFixed(1)}%` : '';
+    const cls = m.change_pct > 0 ? 'up' : m.change_pct < 0 ? 'dn' : 'flat';
+    btn.innerHTML = `${m.stock_id} ${m.name} <span class="${cls}">${pct}</span>`;
+    btn.onclick = () => analyze(m.stock_id);
+    wrap.appendChild(btn);
+  });
+}
+
+// ── Load stock JSON ────────────────────────────────────────────────────────
+async function loadStock(id) {
+  const r = await fetch(BASE + '/' + id + '.json');
+  if (!r.ok) throw new Error(`找不到 ${id} 的分析資料（尚未納入監控清單）`);
+  return await r.json();
+}
+
+// ── Analyze ────────────────────────────────────────────────────────────────
+async function analyze(sid) {
+  sid = (sid || document.getElementById('stock-input').value).trim();
+  if (!sid) return;
+  document.getElementById('stock-input').value = sid;
+  setStatus('載入中…');
+  hide();
+  try {
+    const d = await loadStock(sid);
+    render(d);
+    setStatus(`已載入 ${d.name}（${d.stock_id}）· 資料時間 ${d.generated_at}`);
+  } catch(e) {
+    setStatus('⚠ ' + e.message);
+  }
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide() {
+  ['header','main','bottom'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById('empty').style.display = '';
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function render(d) {
+  document.getElementById('empty').style.display = 'none';
+
+  // Header
+  const h = document.getElementById('header');
+  h.style.display = '';
+  document.getElementById('h-name').textContent = `${d.name}（${d.stock_id}）`;
+  document.getElementById('h-meta').textContent = d.industry;
+  document.getElementById('h-price').textContent = d.quote.close?.toFixed(1) ?? '—';
+  const cp = d.quote.change_pct;
+  const cs = d.quote.change;
+  const cls = cp > 0 ? 'up' : cp < 0 ? 'dn' : 'flat';
+  const sign = cp > 0 ? '+' : '';
+  document.getElementById('h-chg').className = 'chg ' + cls;
+  document.getElementById('h-chg').textContent =
+    cp != null ? `${sign}${cs?.toFixed(2)} (${sign}${cp?.toFixed(2)}%)` : '—';
+  document.getElementById('h-time').textContent = '更新：' + d.generated_at;
+
+  // Main layout
+  document.getElementById('main').style.display = 'flex';
+  document.getElementById('bottom').style.display = 'flex';
+
+  renderMainChart(d);
+  renderKDChart(d);
+  renderChipChart(d);
+  renderSignal(d.signal);
+  renderSummary(d.summary);
+  renderChipSummary(d.chip);
+  renderPrediction(d.prediction);
+  renderPatterns(d.patterns);
+  renderLevels(d.levels);
+  renderSuggestion(d);
+}
+
+// ── Main Chart (K-line + BB + MA + Volume + MACD) ─────────────────────────
+function renderMainChart(d) {
+  const dates = d.ohlcv.date;
+  const I = d.indicators;
+  const layout = {
+    paper_bgcolor: '#161b22', plot_bgcolor: '#161b22',
+    font: { color: '#e6edf3', size: 11 },
+    margin: { l: 50, r: 10, t: 30, b: 20 },
+    height: 520,
+    grid: { rows: 3, columns: 1, pattern: 'independent' },
+    showlegend: false,
+    xaxis:  { type: 'category', showgrid: false, rangeslider: { visible: false }, tickfont: { size: 10 } },
+    xaxis2: { type: 'category', showgrid: false, tickfont: { size: 10 } },
+    xaxis3: { type: 'category', showgrid: false, tickfont: { size: 10 } },
+    yaxis:  { gridcolor: '#30363d', domain: [0.38, 1] },
+    yaxis2: { gridcolor: '#30363d', domain: [0.22, 0.36] },
+    yaxis3: { gridcolor: '#30363d', domain: [0, 0.20] },
+  };
+
+  const candle = {
+    type: 'candlestick', name: 'K線',
+    x: dates, open: d.ohlcv.open, high: d.ohlcv.high,
+    low: d.ohlcv.low, close: d.ohlcv.close,
+    increasing: { line: { color: '#26a641' }, fillcolor: '#26a641' },
+    decreasing: { line: { color: '#f85149' }, fillcolor: '#f85149' },
+    xaxis: 'x', yaxis: 'y',
+  };
+  const vol = {
+    type: 'bar', name: '成交量', x: dates, y: d.ohlcv.volume,
+    marker: { color: d.ohlcv.close.map((c, i) => i === 0 ? '#58a6ff' : c >= d.ohlcv.open[i] ? '#26a641' : '#f85149') },
+    xaxis: 'x2', yaxis: 'y2',
+  };
+  const macdHist = {
+    type: 'bar', name: 'MACD柱', x: dates, y: I.macd_hist,
+    marker: { color: I.macd_hist.map(v => v >= 0 ? '#26a641' : '#f85149') },
+    xaxis: 'x3', yaxis: 'y3',
+  };
+
+  const line = (name, y, color, dash) => ({
+    type: 'scatter', mode: 'lines', name,
+    x: dates, y, line: { color, width: 1.5, dash: dash || 'solid' },
+    xaxis: 'x', yaxis: 'y',
+  });
+  const line3 = (name, y, color) => ({
+    type: 'scatter', mode: 'lines', name,
+    x: dates, y, line: { color, width: 1.2 },
+    xaxis: 'x3', yaxis: 'y3',
+  });
+
+  Plotly.react('main-chart', [
+    candle,
+    line('BB上軌', I.bb_upper, '#888', 'dash'),
+    line('BB下軌', I.bb_lower, '#888', 'dash'),
+    { ...line('BB中軌', I.bb_mid, '#555'), fill: undefined },
+    line('MA5', I.ma5, '#f0b429'),
+    line('MA20', I.ma20, '#58a6ff'),
+    line('MA60', I.ma60, '#bc8cff'),
+    vol,
+    macdHist,
+    line3('MACD', I.macd, '#58a6ff'),
+    line3('Signal', I.macd_signal, '#f85149'),
+  ], layout, { responsive: true, displayModeBar: false });
+}
+
+// ── KD Chart ──────────────────────────────────────────────────────────────
+function renderKDChart(d) {
+  const dates = d.ohlcv.date;
+  const I = d.indicators;
+  Plotly.react('kd-chart', [
+    {type:'scatter',mode:'lines',name:'K',x:dates,y:I.kd_k,line:{color:'#f0b429',width:1.5}},
+    {type:'scatter',mode:'lines',name:'D',x:dates,y:I.kd_d,line:{color:'#58a6ff',width:1.5}},
+    {type:'scatter',mode:'lines',name:'超買',x:dates,y:dates.map(()=>80),line:{color:'#f85149',width:1,dash:'dot'},showlegend:false},
+    {type:'scatter',mode:'lines',name:'超賣',x:dates,y:dates.map(()=>20),line:{color:'#26a641',width:1,dash:'dot'},showlegend:false},
+  ], {
+    paper_bgcolor:'#161b22', plot_bgcolor:'#161b22',
+    font:{color:'#e6edf3',size:11},
+    margin:{l:40,r:10,t:24,b:30}, height:180,
+    title:{text:'KD 指標',font:{size:12},x:0.04},
+    xaxis:{type:'category',showgrid:false,tickfont:{size:9},rangeslider:{visible:false}},
+    yaxis:{gridcolor:'#30363d',range:[0,100]},
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:1.15,font:{size:10}},
+    showlegend:true,
+  }, { responsive:true, displayModeBar:false });
+}
+
+// ── Chip Chart ─────────────────────────────────────────────────────────────
+function renderChipChart(d) {
+  const chip = d.chip;
+  if (!chip || !chip.dates || chip.dates.length === 0) {
+    document.getElementById('chip-chart').innerHTML =
+      '<div style="color:#8b949e;font-size:12px;padding:12px;">無法人籌碼資料</div>';
+    return;
+  }
+  Plotly.react('chip-chart', [
+    {type:'bar',name:'外資',x:chip.dates,y:chip.foreign,marker:{color:'#58a6ff'}},
+    {type:'bar',name:'投信',x:chip.dates,y:chip.trust,marker:{color:'#26a641'}},
+    {type:'bar',name:'自營',x:chip.dates,y:chip.dealer,marker:{color:'#bc8cff'}},
+  ], {
+    paper_bgcolor:'#161b22',plot_bgcolor:'#161b22',
+    font:{color:'#e6edf3',size:11},
+    margin:{l:40,r:10,t:24,b:30},height:180,
+    title:{text:'三大法人（張）',font:{size:12},x:0.04},
+    barmode:'relative',
+    xaxis:{type:'category',showgrid:false,tickfont:{size:9}},
+    yaxis:{gridcolor:'#30363d'},
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:1.15,font:{size:10}},
+  }, { responsive:true, displayModeBar:false });
+}
+
+// ── Signal ────────────────────────────────────────────────────────────────
+function renderSignal(sig) {
+  document.getElementById('signal-dot').style.background = sig.color || '#95a5a6';
+  document.getElementById('signal-label').textContent = sig.label || '—';
+  document.getElementById('signal-desc').textContent = sig.desc || '';
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────
+function renderSummary(summary) {
+  const container = document.getElementById('summary-rows');
+  container.innerHTML = '';
+  (summary || []).forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'row';
+    const cls = row.direction === 'up' ? 'up' : row.direction === 'down' ? 'dn' : 'flat';
+    div.innerHTML = `<span class="lbl">${row.label}</span><span class="val ${cls}">${row.value}</span>`;
+    container.appendChild(div);
+  });
+}
+
+// ── Chip summary ──────────────────────────────────────────────────────────
+function renderChipSummary(chip) {
+  const el = document.getElementById('chip-summary');
+  if (!chip || !chip.dates || chip.dates.length === 0) {
+    el.innerHTML = '<div style="color:var(--sub);font-size:12px;">無資料</div>'; return;
+  }
+  const n = chip.dates.length;
+  const sumN = (arr, n) => arr.slice(-n).filter(v=>v!=null).reduce((a,b)=>a+b,0);
+  const rows = [
+    { label:'外資 5日', val: sumN(chip.foreign, 5) },
+    { label:'投信 5日', val: sumN(chip.trust, 5) },
+    { label:'自營 5日', val: sumN(chip.dealer, 5) },
+    { label:'合計 10日', val: sumN(chip.total, 10) },
+  ];
+  el.innerHTML = rows.map(r => {
+    const cls = r.val > 0 ? 'up' : r.val < 0 ? 'dn' : 'flat';
+    const sign = r.val > 0 ? '+' : '';
+    return `<div class="row"><span class="lbl">${r.label}</span><span class="val ${cls}">${sign}${r.val.toFixed(0)} 張</span></div>`;
+  }).join('');
+}
+
+// ── Prediction ────────────────────────────────────────────────────────────
+function renderPrediction(pred) {
+  const el = document.getElementById('pred-content');
+  if (!pred) { el.innerHTML = '—'; return; }
+  const up = ((pred.up || 0) * 100).toFixed(0);
+  const sid = ((pred.sideways || 0) * 100).toFixed(0);
+  const dn = ((pred.down || 0) * 100).toFixed(0);
+  const acc = ((pred.accuracy || 0) * 100).toFixed(0);
+  el.innerHTML = `
+    <div class="prob-bar">
+      <div class="prob-up" style="width:${up}%"></div>
+      <div class="prob-neu" style="width:${sid}%"></div>
+      <div class="prob-dn" style="width:${dn}%"></div>
+    </div>
+    <div class="prob-labels">
+      <span class="up">↑ ${up}%</span>
+      <span class="flat">→ ${sid}%</span>
+      <span class="dn">↓ ${dn}%</span>
+    </div>
+    <div style="font-size:11px;color:var(--sub);margin-top:6px;">模型準確率 ${acc}%${pred.error ? ' ⚠ '+pred.error : ''}</div>`;
+}
+
+// ── Patterns ──────────────────────────────────────────────────────────────
+function renderPatterns(patterns) {
+  const el = document.getElementById('pattern-list');
+  if (!patterns || patterns.length === 0) {
+    el.innerHTML = '<div style="color:var(--sub);font-size:12px;">未偵測到明顯型態</div>'; return;
+  }
+  el.innerHTML = patterns.map(p =>
+    `<div class="pattern-item"><div class="pt">${p.label}</div><div class="pd">${p.desc} · ${p.date}</div></div>`
+  ).join('');
+}
+
+// ── Key Levels ────────────────────────────────────────────────────────────
+function renderLevels(levels) {
+  const el = document.getElementById('levels-rows');
+  if (!levels) { el.innerHTML = '—'; return; }
+  const map = {
+    resistance: ['壓力區間', 'dn'],
+    pullback:   ['回調區間', 'flat'],
+    support:    ['支撐區間', 'up'],
+    breakout:   ['突破點',   'dn'],
+    breakdown:  ['跌破點',   'up'],
+  };
+  el.innerHTML = Object.entries(map).map(([k, [label, cls]]) => {
+    const v = levels[k];
+    if (v == null) return '';
+    const display = typeof v === 'number' ? v.toFixed(1) : v;
+    return `<div class="row"><span class="lbl">${label}</span><span class="val ${cls}">${display}</span></div>`;
+  }).join('');
+}
+
+// ── Suggestion ────────────────────────────────────────────────────────────
+function renderSuggestion(d) {
+  const el = document.getElementById('suggest-content');
+  const pred = d.prediction;
+  const sig = d.signal;
+  const summary = d.summary || [];
+
+  const trend = summary.find(s => s.label === '趨勢方向')?.value || '—';
+  const rsi = summary.find(s => s.label === 'RSI14')?.value || '—';
+  const bb = summary.find(s => s.label === '布林位置')?.value || '—';
+
+  let text = `目前趨勢：${trend}，RSI：${rsi}，布林：${bb}。`;
+  text += `<br>主力燈號：${sig?.label || '—'}。`;
+  if (pred) {
+    const maxDir = pred.up > pred.down ? (pred.up > pred.sideways ? '上漲' : '盤整') : (pred.down > pred.sideways ? '下跌' : '盤整');
+    text += `<br>AI 預測明日最可能：${maxDir}。`;
+  }
+  el.innerHTML = text;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.getElementById('analyze-btn').onclick = () => analyze();
+document.getElementById('stock-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') analyze();
+});
+
+initWatchlist();
+
+// Auto-load from URL hash: #2330
+if (location.hash) {
+  analyze(location.hash.slice(1));
+}
+</script>
+</body>
+</html>

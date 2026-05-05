@@ -1,0 +1,39 @@
+name: Daily Static Pages
+
+on:
+  schedule:
+    - cron: "30 8 * * 1-5"   # 台灣時間 16:30（UTC+8 → UTC 08:30），週一到週五
+  workflow_dispatch:           # 手動觸發
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate static data
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/generate_static.py
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/stocks/
+          git diff --cached --quiet || git commit -m "chore: daily update $(date -u +'%Y-%m-%d')"
+          git push
