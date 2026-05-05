@@ -10,16 +10,20 @@ load_dotenv()
 from data.cache import get as _cget, set as _cset, is_after_hours
 
 _loader = None
+_loader_token: str = ""
 
 
 def _dl():
-    global _loader
-    if _loader is None:
+    """回傳已登入的 DataLoader。若 .env token 有變化則重新建立 loader。"""
+    global _loader, _loader_token
+    load_dotenv(override=True)  # 每次重新讀取 .env，允許不重啟 app 更新 token
+    token = os.environ.get("FINMIND_TOKEN", "")
+    if _loader is None or token != _loader_token:
         from FinMind.data import DataLoader
         _loader = DataLoader()
-        token = os.environ.get("FINMIND_TOKEN", "")
         if token:
             _loader.login_by_token(api_token=token)
+        _loader_token = token
     return _loader
 
 
@@ -28,26 +32,25 @@ def _ttl() -> int:
 
 
 def daily_ohlcv(stock_id: str, days: int = 120) -> pd.DataFrame:
+    """回傳日線 OHLCV。若股票不存在回傳空 DataFrame；API 失敗則拋例外。"""
     key = f"daily_{stock_id}_{days}"
     cached = _cget(key, _ttl())
     if cached is not None:
         return cached
 
-    try:
-        end = datetime.now().strftime("%Y-%m-%d")
-        start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
-        df = _dl().taiwan_stock_daily(stock_id=stock_id, start_date=start, end_date=end)
-        if df.empty:
-            return df
+    end = datetime.now().strftime("%Y-%m-%d")
+    start = (datetime.now() - timedelta(days=days * 2)).strftime("%Y-%m-%d")
+    # 讓 KeyError / 網路錯誤直接往上拋，由 app.py 顯示有意義的訊息
+    df = _dl().taiwan_stock_daily(stock_id=stock_id, start_date=start, end_date=end)
+    if df.empty:
+        return df  # 股票代碼不存在，真正空資料
 
-        df = df.sort_values("date").rename(columns={"max": "high", "min": "low", "Trading_Volume": "volume"})
-        for col in ["open", "high", "low", "close", "volume"]:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-        df = df.tail(days).reset_index(drop=True)
-        _cset(key, df)
-        return df
-    except Exception:
-        return pd.DataFrame()
+    df = df.sort_values("date").rename(columns={"max": "high", "min": "low", "Trading_Volume": "volume"})
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    df = df.tail(days).reset_index(drop=True)
+    _cset(key, df)
+    return df
 
 
 def minute_ohlcv(stock_id: str) -> pd.DataFrame:
