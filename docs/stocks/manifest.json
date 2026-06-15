@@ -1,1 +1,142 @@
-[]
+[
+  {
+    "stock_id": "0050",
+    "name": "0050",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 105.25,
+    "change_pct": 3.24,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "2303",
+    "name": "2303",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 141.5,
+    "change_pct": 5.99,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "2308",
+    "name": "2308",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 2210.0,
+    "change_pct": -0.23,
+    "signal_label": "觀望",
+    "signal_color": "#95a5a6"
+  },
+  {
+    "stock_id": "2317",
+    "name": "2317",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 267.5,
+    "change_pct": 2.69,
+    "signal_label": "觀望",
+    "signal_color": "#95a5a6"
+  },
+  {
+    "stock_id": "2330",
+    "name": "2330",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 2375.0,
+    "change_pct": 2.81,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "2382",
+    "name": "2382",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 370.0,
+    "change_pct": -0.54,
+    "signal_label": "吸籌期",
+    "signal_color": "#27ae60"
+  },
+  {
+    "stock_id": "2412",
+    "name": "2412",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 145.5,
+    "change_pct": 0.34,
+    "signal_label": "吸籌期",
+    "signal_color": "#27ae60"
+  },
+  {
+    "stock_id": "2454",
+    "name": "2454",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 4470.0,
+    "change_pct": 6.94,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "2603",
+    "name": "2603",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 224.5,
+    "change_pct": -1.54,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "2609",
+    "name": "2609",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 51.2,
+    "change_pct": -2.29,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "2615",
+    "name": "2615",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 83.5,
+    "change_pct": -1.76,
+    "signal_label": "吸籌期",
+    "signal_color": "#27ae60"
+  },
+  {
+    "stock_id": "3661",
+    "name": "3661",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 4250.0,
+    "change_pct": 3.53,
+    "signal_label": "觀望",
+    "signal_color": "#95a5a6"
+  },
+  {
+    "stock_id": "3711",
+    "name": "3711",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 590.0,
+    "change_pct": 0.0,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  },
+  {
+    "stock_id": "6505",
+    "name": "6505",
+    "industry": "—",
+    "generated_at": "2026-06-15 14:42",
+    "close": 53.3,
+    "change_pct": 0.95,
+    "signal_label": "出貨初期",
+    "signal_color": "#e74c3c"
+  }
+]
